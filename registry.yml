@@ -12,4 +12,4 @@
         path: HKCU:\Software\MyCompany\hello
         state: present
         value: world
-        value_type: string
+        type: string
