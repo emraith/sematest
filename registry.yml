@@ -2,12 +2,15 @@
 
 - hosts: windows
   tasks:
-  - name: Create registry path MyCompany
-    ansible.windows.win_regedit:
-      path: HKCU:\Software\MyCompany
+    - name: Create Software key under HKCU\Software (if needed)
+      win_regedit:
+        path: HKCU:\Software\MyCompany
+        state: present
+        hive: HKCU  # Specify hive explicitly for clarity
 
-  - name: Add or update registry path MyCompany, with entry 'hello', and containing 'world'
-  ansible.windows.win_regedit:
-    path: HKCU:\Software\MyCompany
-    name: hello
-    data: world
+    - name: Create hello key in HKCU\Software\MyCompany
+      win_regedit:
+        path: HKCU:\Software\MyCompany\hello
+        state: present
+        value: world
+        value_type: string
