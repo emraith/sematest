@@ -19,5 +19,5 @@
         path: HKCU:\Software\MyCompany\hello
         state: present
         name: patching_cycle
-        value: 'Saturday'
+        data: 'Saturday'
         type: string
