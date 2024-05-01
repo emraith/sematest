@@ -1,6 +1,4 @@
-- name: Create registry keys
-    ansible.windows.win_regedit:
-        path: HKLM:\Software\ABC
-        keys:
-            - name: TierLevel
-                value: "tier"
+---
+- name: Create registry path MyCompany
+  ansible.windows.win_regedit:
+    path: HKCU:\Software\MyCompany
