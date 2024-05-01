@@ -24,7 +24,7 @@
         
     - name: Create patching key in HKLM\Software\MyCompany\Build\PostBuildStatus
       win_regedit:
-        path: HKLM:\Software\MyCompany
+        path: HKLM:\Software\MyCompany\Build
         state: present
         name: PostBuildStatus
         data: 'New'
@@ -32,7 +32,7 @@
 
     - name: Create patching key in HKLM\Software\MyCompany\Build\PCI
       win_regedit:
-        path: HKLM:\Software\MyCompany
+        path: HKLM:\Software\MyCompany\Build
         state: present
         name: PCI
         data: 'No'
@@ -40,7 +40,7 @@
 
     - name: Create patching key in HKLM\Software\MyCompany\Build\PHI
       win_regedit:
-        path: HKLM:\Software\MyCompany
+        path: HKLM:\Software\MyCompany\Build
         state: present
         name: PHI
         data: 'No'
