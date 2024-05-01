@@ -2,53 +2,53 @@
 
 - hosts: windows
   tasks:
-    - name: Create Software key under HKCU\Software (if needed)
+    - name: Create Software key under HKLM\Software
       win_regedit:
         path: HKLM:\Software\MyCompany
         state: present
 
-    - name: Create hello key in HKCU\Software\MyCompany\TierLevel
+    - name: Create hello key in HKLM\Software\MyCompany\TierLevel
       win_regedit:
-        path: HKCU:\Software\MyCompany\TierLevel
+        path: HKLM:\Software\MyCompany\TierLevel
         state: present
 
-    - name: Create hello key in HKCU\Software\MyCompany\Maintenance
+    - name: Create hello key in HKLM\Software\MyCompany\Maintenance
       win_regedit:
-        path: HKCU:\Software\MyCompany\Maintenance
+        path: HKLM:\Software\MyCompany\Maintenance
         state: present
 
-    - name: Create patching key in HKCU\Software\MyCompany\Build
+    - name: Create patching key in HKLM\Software\MyCompany\Build
       win_regedit:
-        path: HKCU:\Software\MyCompany\Build
+        path: HKLM:\Software\MyCompany\Build
         state: present
         
-    - name: Create patching key in HKCU\Software\MyCompany\Build\PostBuildStatus
+    - name: Create patching key in HKLM\Software\MyCompany\Build\PostBuildStatus
       win_regedit:
-        path: HKCU:\Software\MyCompany
+        path: HKLM:\Software\MyCompany
         state: present
         name: PostBuildStatus
         data: 'New'
         type: string
 
-    - name: Create patching key in HKCU\Software\MyCompany\Build\PCI
+    - name: Create patching key in HKLM\Software\MyCompany\Build\PCI
       win_regedit:
-        path: HKCU:\Software\MyCompany
+        path: HKLM:\Software\MyCompany
         state: present
         name: PCI
         data: 'No'
         type: string
 
-    - name: Create patching key in HKCU\Software\MyCompany\Build\PHI
+    - name: Create patching key in HKLM\Software\MyCompany\Build\PHI
       win_regedit:
-        path: HKCU:\Software\MyCompany
+        path: HKLM:\Software\MyCompany
         state: present
         name: PHI
         data: 'No'
         type: string
 
-    - name: Create patching key in HKCU\Software\MyCompany\Maintenance
+    - name: Create patching key in HKLM\Software\MyCompany\Maintenance
       win_regedit:
-        path: HKCU:\Software\MyCompany\Maintenance
+        path: HKLM:\Software\MyCompany\Maintenance
         state: present
         name: patching_cycle
         data: 'Saturday'
