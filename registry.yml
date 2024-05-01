@@ -4,19 +4,51 @@
   tasks:
     - name: Create Software key under HKCU\Software (if needed)
       win_regedit:
+        path: HKLM:\Software\MyCompany
+        state: present
+
+    - name: Create hello key in HKCU\Software\MyCompany\TierLevel
+      win_regedit:
+        path: HKCU:\Software\MyCompany\TierLevel
+        state: present
+
+    - name: Create hello key in HKCU\Software\MyCompany\Maintenance
+      win_regedit:
+        path: HKCU:\Software\MyCompany\Maintenance
+        state: present
+
+    - name: Create patching key in HKCU\Software\MyCompany\Build
+      win_regedit:
+        path: HKCU:\Software\MyCompany\Build
+        state: present
+        
+    - name: Create patching key in HKCU\Software\MyCompany\Build\PostBuildStatus
+      win_regedit:
         path: HKCU:\Software\MyCompany
         state: present
-
-    - name: Create hello key in HKCU\Software\MyCompany
-      win_regedit:
-        path: HKCU:\Software\MyCompany\hello
-        state: present
-        value: world
+        name: PostBuildStatus
+        data: 'New'
         type: string
 
-    - name: Create patching key in HKCU\Software\MyCompany
+    - name: Create patching key in HKCU\Software\MyCompany\Build\PCI
       win_regedit:
-        path: HKCU:\Software\MyCompany\hello
+        path: HKCU:\Software\MyCompany
+        state: present
+        name: PCI
+        data: 'No'
+        type: string
+
+    - name: Create patching key in HKCU\Software\MyCompany\Build\PHI
+      win_regedit:
+        path: HKCU:\Software\MyCompany
+        state: present
+        name: PHI
+        data: 'No'
+        type: string
+
+    - name: Create patching key in HKCU\Software\MyCompany\Maintenance
+      win_regedit:
+        path: HKCU:\Software\MyCompany\Maintenance
         state: present
         name: patching_cycle
         data: 'Saturday'
