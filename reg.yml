@@ -1,5 +1,7 @@
 ---
-tasks:
-- name: Create registry path MyCompany
-  ansible.windows.win_regedit:
-    path: HKCU:\Software\MyCompany
+
+- hosts: windows
+  tasks:
+  - name: Create registry path MyCompany
+    ansible.windows.win_regedit:
+      path: HKCU:\Software\MyCompany
