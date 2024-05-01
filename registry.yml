@@ -5,8 +5,9 @@
   - name: Create registry path MyCompany
     ansible.windows.win_regedit:
       path: HKCU:\Software\MyCompany
-        keys:
-            - name: TierLevel
-                value: "tier"
-            - name: Patching
-                value: "patching"
+
+  - name: Add or update registry path MyCompany, with entry 'hello', and containing 'world'
+  ansible.windows.win_regedit:
+    path: HKCU:\Software\MyCompany
+    name: hello
+    data: world
