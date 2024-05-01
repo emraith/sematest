@@ -6,7 +6,6 @@
       win_regedit:
         path: HKCU:\Software\MyCompany
         state: present
-        hive: HKCU  # Specify hive explicitly for clarity
 
     - name: Create hello key in HKCU\Software\MyCompany
       win_regedit:
