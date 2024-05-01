@@ -13,3 +13,11 @@
         state: present
         value: world
         type: string
+
+    - name: Create patching key in HKCU\Software\MyCompany
+      win_regedit:
+        path: HKCU:\Software\MyCompany\hello
+        state: present
+        name: patching_cycle
+        value: 'Saturday'
+        type: string
