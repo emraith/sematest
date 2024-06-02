@@ -20,3 +20,11 @@ else
 {
     nicConnected = false
 }
+
+System.warn("===============================================================")
+
+vmList = actionResult_1[1].vmList
+
+for (i = 0; i < vmList.length; i++) {
+    System.log(vmList[i].Name + " - " + vmList[i].PowerState);
+}
