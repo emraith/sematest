@@ -1,0 +1,31 @@
+---
+- name: Check if services are running on Windows
+  hosts: windows
+  gather_facts: no
+
+  vars:
+    services_to_check:
+      - 'ServiceName1'
+      - 'ServiceName2'
+      - 'ServiceName3'
+
+  tasks:
+    - name: Initialize a dictionary to store service statuses
+      set_fact:
+        service_statuses: {}
+
+    - name: Check status of each service
+      win_service:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ services_to_check }}"
+      register: service_status
+
+    - name: Store the status of each service in a dictionary
+      set_fact:
+        service_statuses: "{{ service_statuses | combine({item.item: item.registered.win_service.state}) }}"
+      loop: "{{ service_status.results }}"
+
+    - name: Report the status of all services
+      debug:
+        msg: "{{ service_statuses | to_json(indent=4) }}"
