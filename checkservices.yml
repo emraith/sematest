@@ -5,9 +5,11 @@
 
   vars:
     services_to_check:
-      - 'ServiceName1'
-      - 'ServiceName2'
-      - 'ServiceName3'
+      - 'defragsvc'
+      - 'edgeupdate'
+      - 'mpssvc'
+      - 'Spooler'
+      - 'VMTools'
 
   tasks:
     - name: Initialize a dictionary to store service statuses
