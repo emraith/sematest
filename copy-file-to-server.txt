@@ -1,0 +1,200 @@
+DeletevROFile
+	System.log(" ===============================================================================");
+	System.log("                        ----- deletevROFile -----");
+	System.log(" ===============================================================================");
+	
+	//var tempFolder = System.getTempDirectory();
+	
+	fname1 = fileToDelete;
+	var fileToRemove = new File(fname1);
+	
+	System.log("File: " + fname1);
+	fileToRemove.deleteFile();
+	
+
+writevROFile
+
+	System.log(" ===============================================================================");
+	System.log("                             ----- writeFile -----");
+	System.log(" ===============================================================================");
+	
+	//log("Saving: " + fileText)
+	var tempFolder = System.getTempDirectory();
+	var date = System.formatDate(new Date(), "MM_dd_yyyy_HH_mm_ss");
+	fname1 = fname + "_" + date + ".tmp";
+	System.log("File: " + tempFolder + "/" + fname1);
+	var fw = new FileWriter(tempFolder + "/" + fname1);
+	fw.open();
+	fw.clean();
+	fw.write(fileText);
+	fw.close();
+	System.log("Returning fname1: " + tempFolder + "/" + fname1);
+	return tempFolder + "/" + fname1;
+
+getVM
+System.log("-------------");
+System.log("Action: getVM");
+System.log("-------------");
+System.log("hname : " + hname);
+
+allVMs = VcPlugin.getAllVirtualMachines(null, hname);
+
+// Find the VM with the given name and set the vm variable
+vm = null;
+for (var j = 0; j < allVMs.length; j++) {
+    if (allVMs[j].name.toLowerCase() === hname.toLowerCase()) {
+        System.log("VM Found");
+        vm = allVMs[j];
+        return vm;
+    }
+}
+if (!vm) {
+    errorMsg = "Virtual Machine with name " + hname + " not found in any vCenter."
+    System.warn(errorMsg);
+    return null;
+}
+
+copyFileToGuest
+	System.log(" ===============================================================================");
+	System.log("                          ----- copyFileToGuest -----");
+	System.log(" ===============================================================================");
+	
+	System.log("vcoPath: " + vcoPath);
+	var host = vm.sdkConnection;
+	
+	var guestOperationsManager = host.guestOperationsManager;
+	var guestAuth = new VcNamePasswordAuthentication();
+	System.log("vmUsername: " + vmUsername);
+	//log("vmPassword: " + vmPassword);
+	
+	guestAuth.username = vmUsername;
+	guestAuth.password = vmPassword;
+	
+	var fileManager = guestOperationsManager.fileManager;
+	result = false;
+	var attr = new VcGuestFileAttributes();
+	var srcFile = new File(vcoPath);
+	overwrite = true;
+	var uri = fileManager.initiateFileTransferToGuest(vm , guestAuth ,guestFilePath, attr, srcFile.length, overwrite);
+	result = fileManager.putFile(vcoPath, uri);
+	return result;
+	
+
+Workflow
+Copy file to server
+
+
+System.log(" ===============================================================================");
+System.log("                         ----- Join VM to Domain -----");
+System.log(" ===============================================================================");
+//System.log(" hname: " + hname);
+//System.log(" vra_Domain: " + vra_Domain);
+
+hname = "W25-Azure-01"
+//vmUsername = hname + "\\administrator";
+//vmUsername = "WIN-9OENKB2U4SN\\administrator";
+
+
+var scriptText = scriptTextFile.getContentAsMimeAttachment().content;
+var localScriptPath = "D:\\10k_chars.ps1"
+
+
+try {
+
+    System.log("Looking for : " + hname);
+    var vm = System.getModule("com.lab.home.local").getVM(hname)
+
+    if (!vm) {
+        errorMsg = "Virtual Machine with name " + hname + " not found in any vCenter."
+        System.warn(errorMsg);
+    } else {
+        System.log("Looking for : " + hname);
+	
+    vmUsername = vm.hostName + "\\administrator";
+    vmPassword = ""; // Action to retrieve credentials
+
+	localTempFilePath = System.getModule("com.lab.home.local").writevROFile("10k_chars.ps1", scriptText)
+	//localTempFilePath = writeFile("10k_chars.txt",scriptText)
+	
+	//result = copyFileToGuest(localTempFilePath, guestFilePath);
+	
+	System.log("localTempFilePath: " + localTempFilePath);
+	//scriptPath = "C:\\temp\\securestring.txt";
+	scriptFileCopyResult = System.getModule("com.lab.home.local").copyFileToGuest(localTempFilePath, localScriptPath, vm, vmUsername, vmPassword);
+	//scriptFileCopyResult = copyFileToGuest(localTempFilePath, localScriptPath);
+    System.log("scriptFileCopyResult: " + scriptFileCopyResult);
+    
+	System.getModule("com.lab.home.local").deletevROFile(localTempFilePath)
+    
+	result = runInGuest(localScriptPath, "10k_response.txt", vm, vmUsername, vmPassword);
+	
+	System.sleep(1000); // Wait for check to finish
+	System.log("result: " + result);
+	responseText =  getFileFromGuest("10k_response.txt");
+	System.log(" responseText: " + responseText);
+
+    }
+} catch(err){
+    System.log("error : " + err)
+}
+
+function runInGuest(scriptPath, responseLog, vm, vmUsername, vmPassword) {
+	System.log(" ===============================================================================");
+	System.log("                           ----- runInGuest -----");
+	System.log(" ===============================================================================");
+	
+	programPath = "c:\\windows\\system32\\WindowsPowershell\\v1.0\\powershell.exe";
+	System.log("programPath: " + programPath);
+	var host = vm.sdkConnection;
+	
+	var guestOperationsManager = host.guestOperationsManager;
+	var guestAuth = new VcNamePasswordAuthentication();
+	guestAuth.username = vmUsername;
+	guestAuth.password = vmPassword;
+	interactiveSession = false;
+	guestAuth.interactiveSession = interactiveSession;
+	
+	arguments = scriptPath + " > " + responseLog;
+	var guestProgramSpec = new VcGuestProgramSpec();
+	guestProgramSpec.programPath = programPath;
+	guestProgramSpec.arguments = arguments;
+	workingDirectory = "D:\\";
+	guestProgramSpec.workingDirectory = workingDirectory;
+	environment = [];
+	guestProgramSpec.envVariables = environment;
+	System.log("programPath: " + programPath);
+	System.log("arguments: " + arguments);
+	System.log("workingDirectory: " + workingDirectory);
+	System.log("environment: " + environment);
+	
+	var processManager = guestOperationsManager.processManager;
+	result = processManager.startProgramInGuest(vm , guestAuth , guestProgramSpec);
+	System.log("returning result: " + result);
+	return result;
+}
+
+
+function getFileFromGuest(aFile) {
+	System.log(" ===============================================================================");
+	System.log("                     ----- getFileFromGuest -----");
+	System.log(" ===============================================================================");
+	System.log("aFile : " + aFile)
+	var tmpPath = "/var/lib/vco/app-server/temp/" + aFile;
+	
+	var host = vm.sdkConnection;
+
+	var guestOperationsManager = host.guestOperationsManager;
+	var guestAuth = new VcNamePasswordAuthentication();
+	guestAuth.username = vmUsername;
+	guestAuth.password = vmPassword;
+
+	var fileManager = guestOperationsManager.fileManager;
+	result = false;
+	var guestFilePath1 = "D:\\" + aFile;
+	System.warn("guestFilePath1 : " + guestFilePath1)
+	var ftInfo = fileManager.initiateFileTransferFromGuest(vm , guestAuth ,guestFilePath1);
+	result = fileManager.downloadFile(tmpPath, ftInfo);
+	System.log("result3: " + result);
+	
+	return result;
+}
