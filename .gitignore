@@ -1,0 +1,3 @@
+cert/*.pem
+*.pem
+repo-sync.local.json
