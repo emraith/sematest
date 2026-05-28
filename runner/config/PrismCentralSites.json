@@ -1,0 +1,16 @@
+{
+  "sites": [
+    {
+      "location": "Virginia",
+      "hostname": "prism-central-va.example.com"
+    },
+    {
+      "location": "Texas",
+      "hostname": "prism-central-tx.example.com"
+    },
+    {
+      "location": "Amsterdam",
+      "hostname": "prism-central-ams.example.com"
+    }
+  ]
+}

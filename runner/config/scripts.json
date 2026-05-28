@@ -1,0 +1,280 @@
+{
+  "scripts": [
+    {
+      "id": "sample-echo",
+      "label": "Sample Echo",
+      "description": "Simple foreground test script that prints received values.",
+      "path": "scripts/Sample-Echo.ps1",
+      "defaultMode": "foreground",
+      "allowModeOverride": true,
+      "parameters": [
+        {
+          "name": "Name",
+          "type": "string",
+          "required": true,
+          "default": "admin01",
+          "helpText": "Any text value.",
+          "pattern": "^[a-zA-Z0-9._-]+$"
+        },
+        {
+          "name": "Count",
+          "type": "int",
+          "required": true,
+          "default": 2,
+          "min": 1,
+          "max": 10,
+          "helpText": "Number of greeting lines."
+        },
+        {
+          "name": "VerboseMode",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "helpText": "Enable extra output."
+        }
+      ]
+    },
+    {
+      "id": "sample-longtask",
+      "label": "Sample Long Task",
+      "description": "Simulates background-safe work with progress style output.",
+      "path": "scripts/Sample-LongTask.ps1",
+      "defaultMode": "background",
+      "allowModeOverride": true,
+      "parameters": [
+        {
+          "name": "TaskName",
+          "type": "string",
+          "required": true,
+          "default": "DemoBatch",
+          "helpText": "Task label for output."
+        },
+        {
+          "name": "Seconds",
+          "type": "int",
+          "required": true,
+          "default": 6,
+          "min": 1,
+          "max": 30,
+          "helpText": "Approximate runtime in seconds."
+        }
+      ]
+    },
+    {
+      "id": "sample-options",
+      "label": "Sample Options + Secret",
+      "description": "Demonstrates choice and securestring parameter handling.",
+      "path": "scripts/Sample-Options.ps1",
+      "defaultMode": "foreground",
+      "allowModeOverride": true,
+      "parameters": [
+        {
+          "name": "Environment",
+          "type": "choice",
+          "required": true,
+          "choices": [
+            "dev",
+            "qa",
+            "prod"
+          ],
+          "default": "dev",
+          "helpText": "Pick a target environment."
+        },
+        {
+          "name": "ApiToken",
+          "type": "securestring",
+          "required": true,
+          "helpText": "Secret token demo; never echoed in plain text."
+        },
+        {
+          "name": "DryRun",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "helpText": "Simulate execution only."
+        }
+      ]
+    },
+    {
+      "id": "nsx-tag-dfw-rule",
+      "label": "NSX Tag DFW Rule",
+      "description": "Runs New-NsxTagDfwRule.ps1 through a runner-safe wrapper.",
+      "path": "scripts/Run-NewNsxTagDfwRule.ps1",
+      "defaultMode": "foreground",
+      "allowModeOverride": true,
+      "parameters": [
+        {
+          "name": "TagName",
+          "type": "string",
+          "required": true,
+          "helpText": "Tag/group name used to derive rule and policy context."
+        },
+        {
+          "name": "BaseUrl",
+          "type": "string",
+          "required": true,
+          "helpText": "NSX manager URL, e.g. https://nsx-lm.corp.local."
+        },
+        {
+          "name": "Username",
+          "type": "string",
+          "required": true,
+          "helpText": "NSX username."
+        },
+        {
+          "name": "Password",
+          "type": "securestring",
+          "required": true,
+          "helpText": "NSX password."
+        },
+        {
+          "name": "ManagerType",
+          "type": "choice",
+          "required": true,
+          "choices": [
+            "Local",
+            "Global"
+          ],
+          "default": "Local",
+          "helpText": "NSX manager API type."
+        },
+        {
+          "name": "DomainId",
+          "type": "string",
+          "required": false,
+          "default": "default",
+          "helpText": "Policy domain id."
+        },
+        {
+          "name": "PolicyName",
+          "type": "string",
+          "required": false,
+          "helpText": "Optional display name for target security policy."
+        },
+        {
+          "name": "PolicyPath",
+          "type": "string",
+          "required": false,
+          "helpText": "Optional explicit policy path."
+        },
+        {
+          "name": "Description",
+          "type": "string",
+          "required": false,
+          "helpText": "Rule description (or use RitmNumber)."
+        },
+        {
+          "name": "RitmNumber",
+          "type": "string",
+          "required": false,
+          "helpText": "If Description is omitted, script uses RITM# value."
+        },
+        {
+          "name": "ServiceNamesCsv",
+          "type": "string",
+          "required": false,
+          "default": "MS_SQL_Services",
+          "helpText": "Comma-separated service aliases or paths."
+        },
+        {
+          "name": "Action",
+          "type": "choice",
+          "required": true,
+          "choices": [
+            "ALLOW",
+            "DROP",
+            "REJECT",
+            "JUMP_TO_APPLICATION"
+          ],
+          "default": "ALLOW",
+          "helpText": "DFW rule action."
+        },
+        {
+          "name": "Direction",
+          "type": "choice",
+          "required": true,
+          "choices": [
+            "IN",
+            "OUT",
+            "IN_OUT"
+          ],
+          "default": "IN_OUT",
+          "helpText": "DFW rule direction."
+        },
+        {
+          "name": "Logged",
+          "type": "bool",
+          "required": false,
+          "default": true,
+          "helpText": "Enable rule logging."
+        },
+        {
+          "name": "SkipCertificateCheck",
+          "type": "bool",
+          "required": false,
+          "default": false,
+          "helpText": "Skip TLS certificate validation."
+        }
+      ]
+    },
+    {
+      "id": "prism-central-password-rotation",
+      "label": "Password Rotation - Nutanix Prism Central",
+      "description": "Rotate a Prism Central user password for Virginia, Texas, or Amsterdam.",
+      "path": "scripts/Rotate-PrismCentralPassword.ps1",
+      "defaultMode": "foreground",
+      "allowModeOverride": false,
+      "parameters": [
+        {
+          "name": "Location",
+          "type": "choice",
+          "required": true,
+          "choices": [
+            "Virginia",
+            "Texas",
+            "Amsterdam"
+          ],
+          "default": "Virginia",
+          "helpText": "Site selection; mapped to hostname via PrismCentralSites.json."
+        },
+        {
+          "name": "Server",
+          "type": "display",
+          "required": false,
+          "deriveFrom": "Location",
+          "lookupFile": "config/PrismCentralSites.json",
+          "lookupArrayProperty": "sites",
+          "lookupMatchProperty": "location",
+          "lookupValueProperty": "hostname",
+          "helpText": "Resolved Prism Central server for the selected location (read-only)."
+        },
+        {
+          "name": "Username",
+          "type": "string",
+          "required": true,
+          "default": "admin",
+          "helpText": "Prism Central username to rotate."
+        },
+        {
+          "name": "CurrentPassword",
+          "type": "securestring",
+          "required": true,
+          "helpText": "Current password for the account."
+        },
+        {
+          "name": "NewPassword",
+          "type": "securestring",
+          "required": true,
+          "helpText": "New password to set."
+        },
+        {
+          "name": "SkipCertificateCheck",
+          "type": "bool",
+          "required": false,
+          "default": false,
+          "helpText": "Skip TLS certificate validation for Prism Central API calls."
+        }
+      ]
+    }
+  ]
+}
