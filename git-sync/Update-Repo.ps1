@@ -5,19 +5,21 @@
 
 .DESCRIPTION
   Reads the GitHub App private key (PEM), mints a short-lived installation access token via the
-  GitHub REST API, then runs git clone or git fetch + pull --ff-only without storing the token in the remote URL.
+  GitHub REST API, then runs git clone or git fetch + pull --ff-only + restore tracked files
+  without storing the token in the remote URL.
 
 .NOTES
   Default paths target server layout: C:\scripts_sync\, PEM under cert\, clone at homelab\.
   Optional repo-sync.config.json next to this script overrides defaults.
+  For Windows PowerShell 5.1, use Update-Repo.PS5.ps1 (same parameters and config).
 #>
 [CmdletBinding()]
 param(
     [string] $BasePath = 'C:\scripts_sync',
-    [string] $Owner = 'emraith',
-    [string] $Repo = 'homelab',
-    [string] $AppId = '3551775',
-    [string] $InstallationId = '128286341',
+    [string] $Owner = '',
+    [string] $Repo = '',
+    [string] $AppId = '',
+    [string] $InstallationId = '',
     [string] $PemPath,
     [string] $ClonePath,
     [string] $ConfigPath
@@ -160,6 +162,9 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "git fetch failed with exit code $LASTEXITCODE" }
         & git @('-C', $ClonePath, '-c', $gitExtra, 'pull', '--ff-only')
         if ($LASTEXITCODE -ne 0) { throw "git pull --ff-only failed with exit code $LASTEXITCODE" }
+        # Restore tracked files removed or changed locally so the tree matches HEAD (remote after pull).
+        & git @('-C', $ClonePath, 'restore', '--source=HEAD', '--staged', '--worktree', '.')
+        if ($LASTEXITCODE -ne 0) { throw "git restore failed with exit code $LASTEXITCODE" }
     }
 }
 finally {
