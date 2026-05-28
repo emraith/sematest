@@ -11,7 +11,7 @@ Use a **GitHub App** to authenticate `git clone` / `git pull` on Windows servers
 | **Git** | [Git for Windows](https://git-scm.com/download/win) — `git` must be on `PATH`. |
 | **Network** | HTTPS outbound to `github.com` and `api.github.com` (and your Git host if not GitHub.com). Configure proxy if needed (see [Troubleshooting](#troubleshooting)). |
 | **GitHub App** | App installed on your user/org with access to the target repo; **Contents: Read-only** is enough for pull. |
-| **Private key** | The `.pem` generated for the app (**not** the OAuth client secret). |
+| **Private key** | Either the GitHub-generated `.pem` on disk, **or** an RSA key imported into the **Windows certificate store** (referenced by thumbprint). Not the OAuth client secret. |
 
 ## How it works
 
@@ -21,15 +21,15 @@ sequenceDiagram
   participant API as GitHub_API
   participant Git as git
 
-  Script->>Script: Sign JWT with PEM RS256
+  Script->>Script: Sign JWT with PEM or cert store RSA RS256
   Script->>API: POST app installation access token
   API-->>Script: installation token
-  Script->>Git: clone or fetch plus pull ff-only with Authorization header
+  Script->>Git: clone or fetch pull ff-only restore with Authorization header
   Git->>API: HTTPS Git protocol
 ```
 
 1. Load optional [`repo-sync.config.json`](repo-sync.config.json) next to the script.
-2. Build a **JWT** (claims `iss` = GitHub App ID, `iat` / `exp`) signed with the **RSA private key** from the `.pem` file.
+2. Build a **JWT** (claims `iss` = GitHub App ID, `iat` / `exp`) signed with the **RSA private key** from a `.pem` file **or** from the **Windows certificate store** (thumbprint).
 3. Call `POST /app/installations/{installation_id}/access_tokens` to get a **token**.
 4. Run `git` with `http.https://github.com/.extraheader=AUTHORIZATION: Basic …` (GitHub’s recommended **x-access-token** basic pattern) so the token is not written into `origin` in `.git/config`.
 
@@ -57,6 +57,43 @@ Default layout (override with parameters or config):
 
 The clone directory is a **sibling** of `cert\` so a pull never overwrites your bootstrap scripts or the key.
 
+## Storing the key in the Windows certificate store (optional)
+
+You do **not** have to keep a `.pem` file on disk. Typical approach:
+
+1. **Bundle the GitHub private key with a certificate** so it can be imported as **PKCS#12 (PFX)**. GitHub only gives you a key; Windows expects a cert + key. A minimal **self-signed** certificate is enough (the cert is only a carrier for the key, not used for TLS).
+
+   Using **OpenSSL** (e.g. from Git for Windows), on a **secure admin workstation**:
+
+   ```bash
+   openssl req -new -x509 -key myapp-githubsync.2026-05-04.private-key.pem -out github-app-sync.cer -days 3650 -subj "/CN=GitHub App sync (do not trust)"
+   openssl pkcs12 -export -out github-app-sync.pfx -inkey myapp-githubsync.2026-05-04.private-key.pem -in github-app-sync.cer -password pass:
+   ```
+
+   Use a strong PFX password in production instead of `pass:` (empty), then pass that password when importing.
+
+2. **Import the PFX** on the server (often requires elevation for **Local Machine**):
+
+   ```powershell
+   $pwd = Read-Host 'PFX password' -AsSecureString
+   Import-PfxCertificate -FilePath .\github-app-sync.pfx -CertStoreLocation LocalMachine -CertStoreName My -Password $pwd
+   ```
+
+3. **Note the thumbprint** (ignore spaces when copying):
+
+   ```powershell
+   Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.Subject -match 'GitHub App sync' } | Format-List Subject, Thumbprint
+   ```
+
+4. **Configure the script** with `CertificateThumbprint` (and optionally store location/name). When `CertificateThumbprint` is set, **`PemPath` is not used**.
+
+The private key material is then managed by the **CryptoAPI / CNG** store and optional **private key ACLs** (via cert mmc / `Manage Private Keys`), instead of a loose file under `C:\scripts_sync\cert`.
+
+**Caveats**
+
+- The account that runs **`Update-Repo.ps1`** must be allowed to use the key for signing (same as any service using a machine cert).
+- **Rotation**: generate a new GitHub App key, build a new PFX, import the new cert, update **thumbprint** in config, remove the old cert from the store.
+
 ## Configuration
 
 ### `repo-sync.config.json` (optional)
@@ -70,7 +107,10 @@ If present **next to** `Update-Repo.ps1`, JSON keys override script defaults. Om
 | `Repo` | Repository name (without `.git`). |
 | `AppId` | GitHub App numeric ID. |
 | `InstallationId` | Installation ID from the installation URL. |
-| `PemPath` | Full path to the `.pem` file (optional if default under `BasePath\cert\` matches). |
+| `PemPath` | Full path to the `.pem` file (ignored if `CertificateThumbprint` is set). |
+| `CertificateThumbprint` | Hex thumbprint of a cert in the store that has the **RSA private key** (no spaces required). When set, PEM file is not used. |
+| `CertificateStoreLocation` | `LocalMachine` or `CurrentUser` (default `LocalMachine`). |
+| `CertificateStoreName` | Store name (default `My` = *Personal*). |
 | `ClonePath` | Full path to the git working copy (optional if default `BasePath\Repo` is correct). |
 
 Example (adjust for your environment):
@@ -89,18 +129,21 @@ Use **double backslashes** in JSON paths on Windows.
 
 ### Script parameters
 
-All can be passed on the command line; they override defaults but **config file values load first** (config is applied when the script starts—see script source for exact precedence if you mix both).
+All can be passed on the command line. **`repo-sync.config.json` overwrites** any matching parameter (including values you passed on the command line) when those JSON keys are present—omit a key from JSON if you want only CLI/default behavior.
 
 | Parameter | Purpose |
 |-----------|---------|
 | `BasePath` | Sync root (default `C:\scripts_sync`). |
 | `Owner`, `Repo` | Repository slug `Owner/Repo`. |
 | `AppId`, `InstallationId` | GitHub App identifiers. |
-| `PemPath` | Full path to `.pem`. Default: `BasePath\cert\myapp-githubsync.2026-05-04.private-key.pem`. |
+| `PemPath` | Full path to `.pem`. Default when no thumbprint: `BasePath\cert\myapp-githubsync.2026-05-04.private-key.pem`. |
+| `CertificateThumbprint` | Use cert store instead of PEM (see [Storing the key in the Windows certificate store](#storing-the-key-in-the-windows-certificate-store-optional)). |
+| `CertificateStoreLocation` | `LocalMachine` or `CurrentUser`. |
+| `CertificateStoreName` | Usually `My`. |
 | `ClonePath` | Git working tree path. Default: `BasePath\<Repo>`. |
 | `ConfigPath` | Alternate JSON config file path. |
 
-To point at a specific PEM filename without editing defaults in the script, set `PemPath` in JSON or use `-PemPath`.
+Either set **`CertificateThumbprint`** *or* rely on **`PemPath`** (default path if omitted).
 
 ## Usage examples
 
@@ -122,14 +165,20 @@ Override owner/repo for a one-off test:
 pwsh -File .\Update-Repo.ps1 -Owner 'myorg' -Repo 'other-repo' -ClonePath 'C:\scripts_sync\other-repo'
 ```
 
-After first clone, later runs perform `git fetch` and `git pull --ff-only` (fast-forward only). If the server has local commits or diverged branches, the pull may fail until you reset or merge intentionally—by design.
+Use a **certificate thumbprint** instead of a PEM file:
+
+```powershell
+pwsh -File .\Update-Repo.ps1 -CertificateThumbprint 'A1B2C3D4E5F6...'
+```
+
+After first clone, later runs perform `git fetch`, `git pull --ff-only` (fast-forward only), then `git restore` so deleted or modified **tracked** files are put back to match the latest commit. Untracked files you added locally are left alone. If the server has local commits or diverged branches, the pull may fail until you reset or merge intentionally—by design.
 
 ## Adding a new server (checklist)
 
 1. Install **PowerShell 7.4+** and **Git for Windows**.
 2. Create folders: `C:\scripts_sync\` and `C:\scripts_sync\cert\`.
 3. Copy **`Update-Repo.ps1`** and optionally **`repo-sync.config.json`** to `C:\scripts_sync\`.
-4. Copy the **same** GitHub App **`.pem`** used on other servers (same app installation → same installation token audience). Restrict NTFS permissions on `cert\` (e.g. Administrators + a dedicated group).
+4. Provide signing material **either**: copy the **`.pem`** (restrict NTFS on `cert\`), **or** import the **PFX** into `LocalMachine\My` (or `CurrentUser\My`) and set **`CertificateThumbprint`** in config—no loose PEM needed on disk after import.
 5. Ensure outbound HTTPS to GitHub (firewall/proxy).
 6. Run:
 
@@ -150,7 +199,8 @@ No extra registration step exists in GitHub for “this machine”—each server
 
 | Issue | What to check |
 |-------|----------------|
-| **Private key not found** | `PemPath` / default path under `cert\`; file name matches what you deployed. |
+| **Private key not found** | PEM: `PemPath` / default under `cert\`. **Cert**: thumbprint typo, wrong store (`LocalMachine` vs `CurrentUser`), or cert imported without private key. |
+| **Certificate does not have an RSA private key** | Wrong certificate selected, or PFX imported as **public only**. Re-import with full key. |
 | **Installation token request failed** | Clock skew (sync time), wrong **Installation ID** or **App ID**, PEM not matching the app, or app not installed on that repo/org. |
 | **401 / 403 from API** | App permissions (Contents), repo not granted on the installation, or revoked key. |
 | **git SSL / proxy errors** | Corporate TLS inspection: install your root CA for Git; set `http.proxy` / system proxy as required. |
